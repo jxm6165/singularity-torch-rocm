@@ -26,8 +26,8 @@ AUTHOR Jianyu Mao
     conda config --file /.condarc --add channels conda-forge
     conda update --yes conda
 
-    # conda install packages you need, seaborn here as an example
-    conda install --yes -c anaconda seaborn
+    # conda install packages you need, tqdm here as an example
+    conda install --yes -c conda-forge tqdm
     
     # pip
     pip3 install --upgrade pip
