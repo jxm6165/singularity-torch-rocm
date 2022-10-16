@@ -1,3 +1,4 @@
+#!/bin/bash -i
 sudo yum -y update && \
 sudo yum -y groupinstall 'Development Tools'
 sudo yum -y install wget epel-release
