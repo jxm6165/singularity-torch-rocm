@@ -1,0 +1,46 @@
+Bootstrap: docker
+From: rocm/dev-ubuntu-20.04:latest
+
+%environment
+PATH=/usr/local/sbin:/usr/local/bin:$PATH
+LD_LIBRARY_PATH=/usr/local/lib64:/usr/local/lib:$LD_LIBRARY_PATH
+LC_ALL=C
+
+%labels
+AUTHOR Jianyu Mao
+
+%post
+    BUILD_DIR=/tmp/build    # temp build folder inside the container
+
+    # apt install packages you need
+    apt-get -y update
+    apt-get -y install wget git bzip2 libjpeg-dev python3-dev
+
+    # build environment
+    mkdir -p $BUILD_DIR && cd $BUILD_DIR
+    export LC_ALL=C
+
+    # miniconda install
+    wget -c https://repo.anaconda.com/miniconda/Miniconda3-py37_4.12.0-Linux-x86_64.sh
+    bash Miniconda3-py37_4.12.0-Linux-x86_64.sh -b -f -p /usr/local
+    conda config --file /.condarc --add channels conda-forge
+    conda update --yes conda
+
+    # conda install packages you need
+    conda install --yes -c anaconda seaborn
+    
+    # pip
+    pip3 install --upgrade pip
+    pip3 install --no-cache-dir wheel setuptools
+    pip3 install --no-cache-dir torch torchvision --extra-index-url https://download.pytorch.org/whl/rocm5.1.1 
+        
+
+    # cleanup
+    cd /
+    conda clean --index-cache --tarballs --packages --yes
+    apt-get -y clean
+    pip3 cache purge
+    rm -rf $BUILD_DIR
+
+# vim: syntax=sh:ts=4:sw=4:expandtab
+
