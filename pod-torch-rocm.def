@@ -1,5 +1,5 @@
 Bootstrap: docker
-From: rocm/dev-ubuntu-20.04:latest
+From: rocm/pytorch:latest-base
 
 %environment
 PATH=/usr/local/sbin:/usr/local/bin:$PATH
@@ -20,20 +20,26 @@ AUTHOR Jianyu Mao
     mkdir -p $BUILD_DIR && cd $BUILD_DIR
     export LC_ALL=C
 
-    # miniconda install
-    wget -c https://repo.anaconda.com/miniconda/Miniconda3-py37_4.12.0-Linux-x86_64.sh
-    bash Miniconda3-py37_4.12.0-Linux-x86_64.sh -b -f -p /usr/local
+    conda config --file /.condarc --add channels defaults
     conda config --file /.condarc --add channels conda-forge
     conda update --yes conda
 
     # conda install packages you need, tqdm here as an example
     conda install --yes -c conda-forge tqdm
     
-    # pip
+    # pip install packages you need
     pip3 install --upgrade pip
-    pip3 install --no-cache-dir wheel setuptools
-    pip3 install --no-cache-dir torch torchvision --extra-index-url https://download.pytorch.org/whl/rocm5.1.1 
-        
+
+    # pytorch from source
+    conda install astunparse numpy ninja pyyaml setuptools cmake cffi typing_extensions future six requests dataclasses mkl mkl-include
+    cd ~
+    git clone --recursive https://github.com/pytorch/pytorch
+    cd pytorch
+    #git submodule update --init -–recursive --jobs 0
+
+    python3 tools/amd_build/build_amd.py
+    export CMAKE_PREFIX_PATH=${CONDA_PREFIX:-"$(dirname $(which conda))/../"}
+    USE_ROCM=1 MAX_JOBS=4 python3 setup.py install ––user
 
     # cleanup
     cd /
@@ -43,4 +49,3 @@ AUTHOR Jianyu Mao
     rm -rf $BUILD_DIR
 
 # vim: syntax=sh:ts=4:sw=4:expandtab
-
