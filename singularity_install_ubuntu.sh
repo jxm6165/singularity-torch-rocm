@@ -1,6 +1,6 @@
 sudo apt-get update && \
-sudo apt-get install -y build-essential \
-libseccomp-dev pkg-config squashfs-tools cryptsetup
+sudo apt-get install -y build-essential libssl-dev uuid-dev libgpgme11-dev \
+    squashfs-tools libseccomp-dev wget pkg-config git cryptsetup debootstrap
 
 sudo rm -r /usr/local/go
 
