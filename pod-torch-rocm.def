@@ -2,9 +2,11 @@ Bootstrap: docker
 From: rocm/pytorch:latest-base
 
 %environment
-PATH=/usr/local/sbin:/usr/local/bin:$PATH
-LD_LIBRARY_PATH=/usr/local/lib64:/usr/local/lib:$LD_LIBRARY_PATH
-LC_ALL=C
+export PATH=/usr/local/sbin:/usr/local/bin:$PATH
+export LD_LIBRARY_PATH=/usr/local/lib64:/usr/local/lib:$LD_LIBRARY_PATH
+export LC_ALL=C
+export SCCACHE_MAX_FRAME_LENGTH=50000000
+export SCCACHE_IDLE_TIMEOUT=0
 
 %labels
 AUTHOR Jianyu Mao
@@ -18,8 +20,8 @@ AUTHOR Jianyu Mao
 
     # build environment
     mkdir -p $BUILD_DIR && cd $BUILD_DIR
-    export LC_ALL=C
-
+    
+    # conda
     conda config --file /.condarc --add channels defaults
     conda config --file /.condarc --add channels conda-forge
     conda update --yes conda
@@ -38,8 +40,8 @@ AUTHOR Jianyu Mao
     #git submodule update --init -–recursive --jobs 0
 
     python3 tools/amd_build/build_amd.py
-    export CMAKE_PREFIX_PATH=${CONDA_PREFIX:-"$(dirname $(which conda))/../"}
-    USE_ROCM=1 MAX_JOBS=4 python3 setup.py install ––user
+    echo "export CMAKE_PREFIX_PATH=${CONDA_PREFIX:-"$(dirname $(which conda))/../"}" >> $SINGULARITY_ENVIRONMENT
+    USE_ROCM=1 MAX_JOBS=4 python3 setup.py install
 
     # cleanup
     cd /
