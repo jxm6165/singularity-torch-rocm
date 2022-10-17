@@ -5,15 +5,15 @@ From: rocm/pytorch:latest-base
 export PATH=/usr/local/sbin:/usr/local/bin:$PATH
 export LD_LIBRARY_PATH=/usr/local/lib64:/usr/local/lib:$LD_LIBRARY_PATH
 export LC_ALL=C
-export SCCACHE_MAX_FRAME_LENGTH=50000000
-export SCCACHE_IDLE_TIMEOUT=0
+export CMAKE_PREFIX_PATH=${CONDA_PREFIX:-"$(dirname $(which conda))/../"}
 
 %labels
 AUTHOR Jianyu Mao
 
 %post
     BUILD_DIR=/tmp/build    # temp build folder inside the container
-
+    ulimit -n 10240
+    
     # apt install packages you need
     apt-get -y update
     apt-get -y install wget git bzip2 libjpeg-dev python3-dev
@@ -41,11 +41,11 @@ AUTHOR Jianyu Mao
     cd ~
     git clone --recursive https://github.com/pytorch/pytorch
     cd pytorch
-    #git submodule update --init -–recursive --jobs 0
+    git submodule sync
+    git submodule update --init --recursive
 
     python3 tools/amd_build/build_amd.py
-    echo "export CMAKE_PREFIX_PATH=${CONDA_PREFIX:-"$(dirname $(which conda))/../"}" >> $SINGULARITY_ENVIRONMENT
-    USE_ROCM=1 MAX_JOBS=4 python3 setup.py install
+    USE_ROCM=1 python3 setup.py install
 
     # cleanup
     cd /
