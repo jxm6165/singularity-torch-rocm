@@ -21,6 +21,10 @@ AUTHOR Jianyu Mao
     # build environment
     mkdir -p $BUILD_DIR && cd $BUILD_DIR
     
+    # miniconda install if necessary. The base docker has anaconda pre-installed already.
+    #wget -c https://repo.anaconda.com/miniconda/Miniconda3-py37_4.12.0-Linux-x86_64.sh
+    #bash Miniconda3-py37_4.12.0-Linux-x86_64.sh -b -f -p /usr/local
+
     # conda
     conda config --file /.condarc --add channels defaults
     conda config --file /.condarc --add channels conda-forge
