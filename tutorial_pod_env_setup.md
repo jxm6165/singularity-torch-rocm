@@ -1,6 +1,6 @@
 # Tutorial for POD AMD Cluster Setup
 
-*Last updated: **Oct 16, 2022** by Jianyu Mao*
+*Last updated: **Oct 18, 2022** by Jianyu Mao*
 
 >   This tutorial serves as a guideline for Ubuntu environment setup and Python-based Deep Learning frameworks installation with full utilization of [AMD ROCm<sup>TM</sup>](https://docs.amd.com/bundle/ROCm-Deep-Learning-Guide-v5.3/page/Introduction_to_Deep_Learning_Guide.html) acceleration on [POD<sup>TM</sup>](https://pod.penguincomputing.com/) MT3 Clusters. Please note the last updated date. This tutorial may be obsolete and needs adjustment.
 
