@@ -5,8 +5,8 @@
 >   This tutorial serves as a guideline for Ubuntu environment setup and Python-based Deep Learning frameworks installation with full utilization of [AMD ROCm<sup>TM</sup>](https://docs.amd.com/bundle/ROCm-Deep-Learning-Guide-v5.3/page/Introduction_to_Deep_Learning_Guide.html) acceleration on [POD<sup>TM</sup>](https://pod.penguincomputing.com/) MT3 Clusters. Please note the last updated date. This tutorial may be obsolete and needs adjustment.
 
 
+------------------------------------------------------------------------
 
-[TOC]
 
 ## Introduction to AMD ROCm and POD
 
@@ -21,6 +21,7 @@ Penguin Computing® On Demand™ (POD™) is a HPC computing environment in the 
 POD resources are divided into several MT clusters. We will have access to a MT2 instance (CPUs enabled) as the login node and MT3 instances (CPUs and AMD GPUs enabled) as compute nodes. **Note that login nodes (MT2) are used for administrative tasks, not for research computing.** **We are required to setup our own workplace on compute nodes in MT3 clusters.** In this tutorial, *compute nodes*, *MT3 nodes* and *MT3 instances* are used interchangeably.
 
 
+------------------------------------------------------------------
 
 ## Guideline for Access POD Clusters
 
@@ -135,7 +136,8 @@ The following steps are suitable for **Linux and MacOS** users. If you are using
 
 *   If no error message occurs, congratulations! We have successfully connected to the node we will work on. Next, we will set up Ubuntu environment with singularity.
 
-​	  
+
+------------------------------------------------------------------------
 
 
 
@@ -361,6 +363,7 @@ For more options to build PyTorch and/or other Deep Learning Frameworks supporti
 
 
 
+----------------------------------------------------------
 
 
 ## SLURM and Train with AMD GPU
@@ -502,7 +505,7 @@ We can view that the task is running by `squeue` command. The task is assumed to
 
 After the job is completed, an output file `slurm-<job-id>.out` will be stored in the current directory. This is a log file contains outputs from both PyTorch and SLURM. You could how the model is trained in 3 epochs.
 
-
+-----------------------------------------------------
 
 ## The End
 
