@@ -1,0 +1,42 @@
+Bootstrap: docker
+From: rocm/pytorch:latest
+
+%environment
+export PATH=/usr/local/sbin:/usr/local/bin:$PATH
+export LD_LIBRARY_PATH=/usr/local/lib64:/usr/local/lib:$LD_LIBRARY_PATH
+export LC_ALL=C
+export CMAKE_PREFIX_PATH=${CONDA_PREFIX:-"$(dirname $(which conda))/../"}
+
+%labels
+AUTHOR Jianyu Mao
+
+%post
+    BUILD_DIR=/tmp/build    # temp build folder inside the container
+
+    # apt install packages you need
+    apt-get -y update
+    apt-get -y install wget git bzip2
+
+    # build environment
+    mkdir -p $BUILD_DIR && cd $BUILD_DIR
+
+    # conda
+    conda config --file /.condarc --add channels defaults
+    conda config --file /.condarc --add channels conda-forge
+    conda update --yes conda
+
+    # conda install packages you need, tqdm here as an example
+    conda install --yes -c conda-forge kaggle opencv
+
+    # pip install packages you need
+    pip install --upgrade pip
+
+
+    # cleanup
+    cd /
+    conda clean --index-cache --tarballs --packages --yes
+    apt-get -y clean
+    pip3 cache purge
+    rm -rf $BUILD_DIR
+
+# vim: syntax=sh:ts=4:sw=4:expandtab
