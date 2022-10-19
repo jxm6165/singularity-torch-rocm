@@ -30,8 +30,8 @@ AUTHOR Jianyu Mao
     conda config --file /.condarc --add channels conda-forge
     conda update --yes conda
 
-    # conda install packages you need, tqdm here as an example
-    conda install --yes -c conda-forge tqdm
+    # conda install packages you need, kaggle and cv2 is what we need
+    conda install --yes -c conda-forge kaggle opencv
     
     # pip install packages you need
     pip3 install --upgrade pip
