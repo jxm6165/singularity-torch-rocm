@@ -1,11 +1,10 @@
 # Tutorial for POD AMD Cluster Setup
 
-*Last updated: **Oct 18, 2022** by Jianyu Mao*
+*Last updated: **Oct 16, 2022** by Jianyu Mao*
 
 >   This tutorial serves as a guideline for Ubuntu environment setup and Python-based Deep Learning frameworks installation with full utilization of [AMD ROCm<sup>TM</sup>](https://docs.amd.com/bundle/ROCm-Deep-Learning-Guide-v5.3/page/Introduction_to_Deep_Learning_Guide.html) acceleration on [POD<sup>TM</sup>](https://pod.penguincomputing.com/) MT3 Clusters. Please note the last updated date. This tutorial may be obsolete and needs adjustment.
 
 
-------------------------------------------------------------------------
 
 
 ## Introduction to AMD ROCm and POD
@@ -21,7 +20,6 @@ Penguin Computing® On Demand™ (POD™) is a HPC computing environment in the 
 POD resources are divided into several MT clusters. We will have access to a MT2 instance (CPUs enabled) as the login node and MT3 instances (CPUs and AMD GPUs enabled) as compute nodes. **Note that login nodes (MT2) are used for administrative tasks, not for research computing.** **We are required to setup our own workplace on compute nodes in MT3 clusters.** In this tutorial, *compute nodes*, *MT3 nodes* and *MT3 instances* are used interchangeably.
 
 
-------------------------------------------------------------------
 
 ## Guideline for Access POD Clusters
 
@@ -123,7 +121,7 @@ The following steps are suitable for **Linux and MacOS** users. If you are using
         ```
 
     *   Make sure the `SHA256` fingerprint is identical to what is shown under **My SSH Keys** on POD portal.                                                                                                                                                                                                               
-    
+
 *   We have set up the ssh keys for accessing MT3 compute node. Try the following command:
 
     *   ```bash
@@ -136,8 +134,9 @@ The following steps are suitable for **Linux and MacOS** users. If you are using
 
 *   If no error message occurs, congratulations! We have successfully connected to the node we will work on. Next, we will set up Ubuntu environment with singularity.
 
+​	  
 
-------------------------------------------------------------------------
+------
 
 
 
@@ -159,9 +158,132 @@ The POD cluster is shared across multiple users and thus cannot grant each user 
 
 This section will offer two options for using singularity to build a container with Ubuntu 20.04.4, PyTorch 1.13.0 with ROCm support. If you are seeking for building containers with other DL framework like Tensorflow, please check [ROCm-DL-Installation](https://docs.amd.com/bundle/ROCm-Deep-Learning-Guide-v5.3/page/Frameworks_Installation.html). That page will give you an idea how to adjust the following steps for Tensorflow installation, and the adjustments should be simple and straightforward.
 
+
+
+#### Base Environment Setup for Singularity
+
+*   `singularity`  can be installed on Linux machines (Ubuntu or CentOS). If your local machine is running a different OS, please try to set up linux environment or get a Linux instance from any cloud computing service, like AWS EC2. For general purpose, the steps below are running on an AWS EC2 instance.
+
+*   AWS EC2 Setup (skip this step if it is unnecessary)
+
+    *   Select EC2 –> Go to EC2 Dashboard –> Click on `Launch instance` button -> Launch instance
+
+    *   Type in `ubuntu` as **Name** –> Select Ubuntu under **Quick Start** –> Select `t2.small` as **Instance type**
+
+    *   `Create new key pair` if you don’t have one, a key file called *ubuntu.pem* will be downloaded to your local machine.
+
+    *   Change 10 GiB to `150 GiB` for **Configure storage**. (Leave suffcient free space of at least 100 GB. The required storage may vary based on the packages to be installed)
+
+    *   Keep everything else as default. Click on `Launch instance` button on the right.
+
+    *   Wait for several minutes until the instance is `running`.
+
+    *   On your local machine, go to the directory that *ubuntu.pem* is stored.
+
+    *   ```bash
+        localname@local:~/Downloads$ chmod 400 ubuntu.pem
+        localname@local:~/Downloads$ ssh -i "ubuntu.pem" ubuntu@ec2-{Public IP}.compute-1.amazonaws.com
+        ubuntu@ip-{Private IP}:~$
+        ```
+
+*   Please make sure your instance has at least 2GB RAM and at least 100GB free disk space (depend on the size of your desired packages). Limited RAM may cause out-of-memory error and you will see the instance freezes.
+
+*   When creating the instance, please make sure you hold the ssh key (.pem from AWS) on the local machine to access the instance.
+
+*   Open **Terminal** on your Linux machine / Connect to your instance. Copy the specific git repo to your machine. This repo contains files for singularity installation and a recipe for our desired container.
+
+*   Run the following commands to install singularity on your Linux instance. For CentOS users, please chmod and execute `singularity_install_centos.sh`. During Installation, if a window pops up and ask you to update some stuff, press ENTER. This actually will not affect the installation.
+
+*   ```bash
+    ubuntu@ip-{Private IP}:~$ git clone https://github.com/jxm6165/singularity-torch-rocm.git
+    ubuntu@ip-{Private IP}:~$ cd singularity-torch-rocm
+    ubuntu@ip-{Private IP}:~/singularity-torch-rocm$ ls
+    pod-torch-rocm.def  singularity_install_centos.sh  singularity_install_ubuntu.sh
+    # Run singularity_install_centos.sh if CentOS
+    ubuntu@ip-{Private IP}:~/singularity-torch-rocm$ chmod 777 singularity_install_ubuntu.sh
+    ubuntu@ip-{Private IP}:~/singularity-torch-rocm$ ./singularity_install_ubuntu.sh
+    ......
+     DONE
+    3.6.3
+    ubuntu@ip-{Private IP}:~/singularity-torch-rocm$ cd ~ && which singularity 
+    /usr/local/bin/singularity
+    ```
+
+
+
+
+
 #### Option 1 (Short Solution): Use Docker Image with PyTorch Pre-installed
 
 This option will provide a painless setup procedure to enable almost all packages that we need, including Ubuntu 20.04.4 LTS, Python 3.7.13, conda 22.9.0, PyTorch 1.13.0, ROCm 5.3.0, etc. But please try the Option 2 as well because that will give us flexibility in case we need to configure our environment with a customized list of desired packages.
+
+*   ROCm releases the docker image with PyTorch pre-intalled and other packages that we need. We define a singularity configuration script `rocm-torch.def` to buiild our own image. This file is already cloned to your machine via git.
+
+    *   ```bash
+        Bootstrap: docker
+        From: rocm/pytorch:latest
+        
+        %environment
+        export PATH=/usr/local/sbin:/usr/local/bin:$PATH
+        export LD_LIBRARY_PATH=/usr/local/lib64:/usr/local/lib:$LD_LIBRARY_PATH
+        export LC_ALL=C
+        export CMAKE_PREFIX_PATH=${CONDA_PREFIX:-"$(dirname $(which conda))/../"}
+        
+        %labels
+        AUTHOR Jianyu Mao
+        
+        %post
+            BUILD_DIR=/tmp/build    # temp build folder inside the container
+        
+            # apt install packages you need
+            apt-get -y update
+            apt-get -y install wget git bzip2
+        
+            # build environment
+            mkdir -p $BUILD_DIR && cd $BUILD_DIR
+        
+            # conda
+            conda config --file /.condarc --add channels defaults
+            conda config --file /.condarc --add channels conda-forge
+            conda update --yes conda
+        
+            # conda install packages you need, kaggle and cv2 is what we need
+            conda install --yes -c conda-forge kaggle opencv
+        
+            # pip install packages you need
+            pip install --upgrade pip
+        
+        
+            # cleanup
+            cd /
+            conda clean --index-cache --tarballs --packages --yes
+            apt-get -y clean
+            pip3 cache purge
+            rm -rf $BUILD_DIR
+        
+        # vim: syntax=sh:ts=4:sw=4:expandtab
+        ```
+
+*   Then, we can build the image by the following command.
+
+    *   ```bash
+        ubuntu@ip-{Private IP}:~$ sudo singularity build rocm-torch.img rocm-torch.def
+        ```
+
+        
+
+*   After building, we should have `rocm-torch.img` under our current directory. This image is supposed to be used on MT3. The only stuff left is to transfer the container image *pod-torch-rocm.img* to our POD cluster.
+
+*   ```bash
+    # If the image is built on Cloud, first download it to local machine, open Terminal on LOCAL MACHINE and go to the directory where .pem file locates
+    # If the image is built on local machine, the following command line is unnecessary
+    localname@local:~/Downloads$ scp -i "ubuntu.pem" ubuntu@ec2-{Public IP}.compute-1.amazonaws.com:~/rocm-torch.img ~/Downloads/
+    
+    # Transfer the image to POD MT3 instance
+    localname@local:~/Downloads$ scp -C rocm-torch.img username@104.224.20.197:~/containers/
+    ```
+
+
 
 *   Connect to POD MT3 node.
 
@@ -184,26 +306,32 @@ This option will provide a painless setup procedure to enable almost all package
         username@pod[node]:~$ module load singularity
         ```
 
-*   ROCm releases the docker image with PyTorch pre-intalled and other packages that we need. Directly pulling the latest docker image into our MT3 node by `singularity` will tremendously ease our setup procedure. To retrieve a remote container, use the `pull` command. We name the pulled docker containers (converted to SIF format by `singularity`) as `rocm-torch.sif`.
+*   Now, let’s test our `rocm-torch.sif` container by `exec` and `shell` command. You may also come across `run` command, an alternative to `exec`. They do the same job.
 
     *   ```bash
-        username@pod[node]:~$ mkdir containers
-        username@pod[node]:~$ cd containers
-        username@pod[node]:~/containers$ singularity pull rocm-torch.sif docker://rocm/pytorch:latest
-        # If working with Tensorflow, singularity pull rocm-tensorflow.sif docker://rocm/tensorflow:latest
-        ```
-
-*   That’s it! Because the docker image released by ROCm contains all we need, so we can skip the steps to build our own container from scratch. Now, let’s test our `rocm-torch.sif` container by `exec` and `shell` command. You may also come across `run` command, an alternative to `exec`. They do the same job.
-
-    *   ```bash
-        username@pod[node]:~/containers$ singularity exec rocm-torch.sif echo “Hello, world”
+        username@pod[node]:~/containers$ singularity exec rocm-torch.img echo “Hello, world”
         “Hello, world”
-        username@pod[node]:~/containers$ singularity shell rocm-torch.sif
+        username@pod[node]:~/containers$ singularity shell rocm-torch.img
         singularity> python3 -V
         Python 3.7.13
         singularity> echo “Hello, world”
         “Hello, world”
         ```
+
+    *   To quit singularity shell, press `control` + `D`.
+
+*   In the following tasks, we may need to download dataset from [Kaggle](https://www.kaggle.com/). Please [set up your Kaggle account if you do not have one. Then, click on your avatar (the circle on the top right) –> Account –> Move down to **API** section –> Click on **Create New API Token**. A token file *kaggle.json* will be downloaded to your local machine. The content should look like *{"username":"yourusername","key":"some-numbers-and letters"}*. Copy it. Then, go back to POD cluster.
+
+    *   ```bash
+        username@pod[node]:~$ singularity shell rocm-torch.img
+        singularity> vi $HOME/.kaggle/kaggle.json
+        # Copy and Paste your Kaggle Token by press I and Control + V
+        # Exit insert mode by press ESC
+        # Save file by :wq
+        singularity> chmod 600 $HOME/.kaggle/kaggle.json
+        ```
+
+    *   Now, `kaggle` command can be used.
 
         
 
@@ -213,9 +341,7 @@ This option will provide a painless setup procedure to enable almost all package
 
 #### Option 2 (not recommend but good to study): Using ROCm Base Docker Image and Build PyTorch From Source
 
-This option is considered to be more flexible than Option 1. However, the setup procedure will be much more complex than Option 1. The workflow will be installing singularity on local machine, define our own container recipe, build container image based on the recipe by singularity and transfer the built container image from local to POD cluster for later use. **Note**: (Oct 2022) PyTorch + ROCm package from `pip` wheel has embedded miopen kernel compilation issues, so we have only to build PyTorch from source, which is a big inconvienience. FYI, check [that  issue](https://github.com/ROCmSoftwarePlatform/MIOpen/issues/1709#issuecomment-1220033318).
-
-*   `singularity`  can be installed on Linux machines (Ubuntu or CentOS). If your local machine is running a different OS, please try to set up linux environment or get a Linux instance from any cloud computing service, like AWS EC2. For general purpose, the steps below are running on an AWS EC2 instance.
+This option is considered to be more flexible than Option 1. However, the setup procedure will be much more complex than Option 1. The workflow will be installing singularity on local machine, define our own container recipe, build container image based on the recipe by singularity and transfer the built container image from local to POD cluster for later use. **Note**: (Oct 2022) PyTorch + ROCm package from `pip` wheel has embedded miopen kernel compilation issues, so we have only to build PyTorch from source, which is a big inconvienience. FYI, check [that  issue](https://github.com/ROCmSoftwarePlatform/MIOpen/issues/1709#issuecomment-1220033318).c`singularity`  can be installed on Linux machines (Ubuntu or CentOS). If your local machine is running a different OS, please try to set up linux environment or get a Linux instance from any cloud computing service, like AWS EC2. For general purpose, the steps below are running on an AWS EC2 instance.
 
 *   AWS EC2 Setup (skip this step if it is unnecessary)
 
@@ -298,8 +424,8 @@ This option is considered to be more flexible than Option 1. However, the setup 
         conda config --file /.condarc --add channels conda-forge
         conda update --yes conda
     
-        # conda install packages you need, tqdm here as an example
-        conda install --yes -c conda-forge tqdm
+        # conda install packages you need, kaggle and cv2 is what we need
+        conda install --yes -c conda-forge kaggle opencv
         
         # pip install packages you need
         pip3 install --upgrade pip
@@ -351,7 +477,7 @@ This option is considered to be more flexible than Option 1. However, the setup 
     localname@local:~/Downloads$ scp -C pod-torch-rocm.img username@104.224.20.197:~/containers/
     ```
 
-*   Connect to POD MT3 node. We can find *pod-torch-rocm.img* under *~/containers/* folder. Feel free to do some basic tests with `singularity` commands `exec` and `shell` as in Option 1.
+*   Connect to POD MT3 node. We can find *pod-torch-rocm.img* under *~/containers/* folder. Feel free to do some basic tests with `singularity` commands `exec` and `shell` and setup Kaggle as in Option 1.
 
     
 
@@ -363,7 +489,12 @@ For more options to build PyTorch and/or other Deep Learning Frameworks supporti
 
 
 
-----------------------------------------------------------
+
+
+------
+
+
+
 
 
 ## SLURM and Train with AMD GPU
@@ -505,7 +636,11 @@ We can view that the task is running by `squeue` command. The task is assumed to
 
 After the job is completed, an output file `slurm-<job-id>.out` will be stored in the current directory. This is a log file contains outputs from both PyTorch and SLURM. You could how the model is trained in 3 epochs.
 
------------------------------------------------------
+
+
+------
+
+
 
 ## The End
 
