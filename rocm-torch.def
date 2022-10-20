@@ -26,7 +26,7 @@ AUTHOR Jianyu Mao
     conda update --yes conda
 
     # conda install packages you need, tqdm here as an example
-    conda install --yes -c conda-forge kaggle opencv
+    conda install --yes -c conda-forge kaggle opencv matplotlib
 
     # pip install packages you need
     pip install --upgrade pip
