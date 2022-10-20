@@ -1,6 +1,6 @@
 # Tutorial for POD AMD Cluster Setup
 
-*Last updated: **Oct 19, 2022** by Jianyu Mao*
+*Last updated: **Oct 20, 2022** by Jianyu Mao*
 
 >   This tutorial serves as a guideline for Ubuntu environment setup and Python-based Deep Learning frameworks installation with full utilization of [AMD ROCm<sup>TM</sup>](https://docs.amd.com/bundle/ROCm-Deep-Learning-Guide-v5.3/page/Introduction_to_Deep_Learning_Guide.html) acceleration on [POD<sup>TM</sup>](https://pod.penguincomputing.com/) MT3 Clusters. Please note the last updated date. This tutorial may be obsolete and needs adjustment.
 
@@ -425,7 +425,8 @@ This option is considered to be more flexible than Option 1. However, the setup 
         conda update --yes conda
     
         # conda install packages you need, kaggle and cv2 is what we need
-        conda install --yes -c conda-forge kaggle opencv
+        conda install --yes -c conda-forge kaggle
+        conda install --yes opencv matplotlib
         
         # pip install packages you need
         pip3 install --upgrade pip
@@ -633,6 +634,8 @@ username@pod[node]:~/pod-torch-test$ squeue -u $USER
 ```
 
 We can view that the task is running by `squeue` command. The task is assumed to be completed within 1 minute. If it runs more than 1 minute, there is something wrong with your container image, especially ROCm is not working or GPUs are not available.
+    
+**Note**: If the output file contains a line like "WARNING: no nv files on this host!", don't mind. You can change the last line in SLURM script with `singularity run --rocm $HOME/containers/rocm-torch.sif python3 -c "import torch;print(torch.cuda.is_available());"` and confirm GPU is available in the container!
 
 After the job is completed, an output file `slurm-<job-id>.out` will be stored in the current directory. This is a log file contains outputs from both PyTorch and SLURM. You could how the model is trained in 3 epochs.
 
