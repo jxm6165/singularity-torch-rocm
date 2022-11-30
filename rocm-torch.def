@@ -26,12 +26,12 @@ AUTHOR Jianyu Mao
     conda update --yes conda
 
     # conda install packages you need, tqdm here as an example
-    conda install --yes -c conda-forge kaggle 
+    conda install --yes -c conda-forge tqdm ninja 
     conda install --yes opencv matplotlib
 
     # pip install packages you need
     pip install --upgrade pip
-
+    python -m pip install 'git+https://github.com/facebookresearch/detectron2.git'
 
     # cleanup
     cd /
